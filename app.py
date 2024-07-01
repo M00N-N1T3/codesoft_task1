@@ -114,13 +114,15 @@ def update_task(index: int, name: str, description: str, priority: str ,filename
             return
 
     # selecting task number and task name
-    selected_task = f"Selected task {tasks[index][0].strip('\" \"')}: {tasks[index][3].strip(" ")}"
+    select = tasks[index][0].strip('\" \"')
+    selected_task = f'Selected task {select}: {tasks[index][3].strip(" ")}'
 
     message = update_message(new_task_data)
     result = logic.update_task([index,tasks],new_task_data,filename)
 
     result_message = "Successfully" if result else "Failed to"
-    message = f"{result_message} updated the {message} of task {tasks[index][0].strip('\" \"')}."
+    select = tasks[index][0].strip('\" \"')
+    message = f"{result_message} updated the {message} of task {select}."
 
     tab = tabulate.tabulate([[f"{selected_task} \n{message}"]],tablefmt="fancy_grid")
     print(tab)
@@ -156,7 +158,8 @@ def delete_task(index,filename):
     data = logic.regex_split(tasks[index])
     # selecting task number and task name
 
-    selected_task = f"Selected task {data[0].strip('\" \"')}: {data[3].strip(" ")}"
+    select = data[0].strip('\" \"')
+    selected_task = f'Selected task {select}: {data[3].strip(" ")}'
 
     operation = logic.delete_task([index,tasks],filename)
 
@@ -249,7 +252,8 @@ def change_status(index,status,filename):
     data = logic.regex_split(tasks[index])
 
     # selecting task number and task name
-    selected_task = f"Selected task {data[0].strip('\" \"')}: {data[3].strip(" ")}"
+    select = data[0].strip('\" \"')
+    selected_task = f'Selected task {select}: {data[3].strip(" ")}'
 
     operation = logic.change_status([index,tasks],status.upper(),filename)
 
@@ -345,7 +349,7 @@ def list_all():
     clean_data = [file for file in files if ".txt" in file]
 
     if len(clean_data) < 1:
-        tab = tabulate.tabulate(["You currently do not have any todo_lists"],tablefmt="fancy_grid")
+        tab = tabulate.tabulate([["You currently do not have any todo_lists"]],tablefmt="fancy_grid")
         print(tab)
         return
 
