@@ -45,6 +45,8 @@ def add_task(name: str,description:str ,priority: str, file_name:str ):
             file_name = file_path(logic.DEFAULT_FILENAME)
         else:
             file_name = file_path(user_input)
+    else:
+        file_name = file_path(file_name)
 
     operation = logic.add_task(name,description,priority,file_name)
 
@@ -298,6 +300,7 @@ def create_file(filename):
     elif not exists(filename):
         with open(file,"w") as f:
             f.close()
+        tab = tabulate.tabulate([[f"{basename(file)} has been created"]],tablefmt="fancy_grid")
     else:
         tab = tabulate.tabulate([[f"Error could not create {basename(file)}"]],tablefmt="fancy_grid")
 
