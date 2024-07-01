@@ -1,6 +1,4 @@
-# dir
-__pycache__
-
-
-# files
-*.zip
+*pycache*
+.vscode
+tempCode*
+*.txt

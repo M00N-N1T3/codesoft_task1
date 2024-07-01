@@ -1,6 +1,0 @@
-[STATUS] [PRIORITY] - NAME: DESCRIPTION
-[LOW] [NOT STARTED] - t: tummie
-[LOW] [NOT STARTED] - t: tummie
-[URGENT] [NOT STARTED] - t: tummie
-[MEDIUM] [NOT STARTED] - task 1: testing
-[OPTIONAL] [NOT STARTED] - Khumo: testing the task
