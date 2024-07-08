@@ -46,6 +46,10 @@ def add_task(task_name: str, description: str, priority:str, file_name = DEFAULT
         pass
 
     priority = get_dict_value(PRIORITIES,priority.upper())
+
+    if priority == None:
+        priority = "OPTIONAL"
+
     task = f'"{len(tasks)+1}" "{priority}" "{task_name}" "{description}" "{status}"'
 
     # appending new task to list of current tasks

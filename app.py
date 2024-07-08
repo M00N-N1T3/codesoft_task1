@@ -5,9 +5,23 @@ from logic.os_mod import DOWNLOADS, CWD, HOME,join, basename, exists, isfile, re
 
 
 def main_path():
+    """main path where all the todo_list files gets stored
+
+    Returns:
+        str : the path to the directory
+    """
     return join(DOWNLOADS,"TaskIT")
 
-def file_path(file):
+def file_path(file:str ):
+    """
+    generates a string that contains the path and filename
+
+    Args:
+        file (str): the file we want to create/use
+
+    Returns:
+        str : the full path including the file name
+    """
     file = f"{file}.txt" if not ".txt" in file else file
     return join(DOWNLOADS,"TaskIT",file)
 
@@ -58,7 +72,6 @@ def add_task(name: str,description:str ,priority: str, file_name:str ):
     return
 
 
-
 @main.command(help="update an existing task.")
 @click.option("-i","--index",type=int,prompt = "Enter the task number",help="the index of the task you want to update")
 @click.option("-n","--name",help="the new name if you wish to update the name of the task",default = "")
@@ -79,15 +92,7 @@ def update_task(index: int, name: str, description: str, priority: str ,filename
     filename = file_path(filename)
     tasks = logic.read_file(filename)
 
-    if tasks == "":
-        tab = tabulate.tabulate([[f"Todo list does not exist: {basename(filename)}"]],tablefmt="fancy_grid")
-        print(tab)
-        return
-
-
-    if index == 0 or index > len(tasks):
-        tab = tabulate.tabulate([['The selected task number does not exists.']],tablefmt="fancy_grid")
-        print(tab)
+    if not validate_tasks(tasks,filename) or not valid_task_index(index,tasks):
         return
 
     # index correction so that we can retrieve correct data
@@ -115,19 +120,15 @@ def update_task(index: int, name: str, description: str, priority: str ,filename
             print(tab)
             return
 
-    # selecting task number and task name
-    select = tasks[index][0].strip('\" \"')
-    selected_task = f'Selected task {select}: {tasks[index][3].strip(" ")}'
+    selected_index, selected_message = display_index(tasks,index)
 
     message = update_message(new_task_data)
     result = logic.update_task([index,tasks],new_task_data,filename)
 
     result_message = "Successfully" if result else "Failed to"
-    select = tasks[index][0].strip('\" \"')
-    message = f"{result_message} updated the {message} of task {select}."
+    message = f"{result_message} updated the {message} of task {selected_index}."
 
-    tab = tabulate.tabulate([[f"{selected_task} \n{message}"]],tablefmt="fancy_grid")
-    print(tab)
+    print_result(selected_message,message)
     return
 
 
@@ -145,33 +146,19 @@ def delete_task(index,filename):
     filename = file_path(filename)
     tasks = logic.read_file(filename)
 
-    if tasks == "":
-        tab = tabulate.tabulate([[f"Todo list does not exist: {basename(filename)}"]],tablefmt="fancy_grid")
-        print(tab)
-        return
-
-
-    if index == 0 or index > len(tasks):
-        tab = tabulate.tabulate([['The selected task number does not exists.']],tablefmt="fancy_grid")
-        print(tab)
+    if not validate_tasks(tasks,filename) or not valid_task_index(index,tasks):
         return
 
     index -=1
-    data = logic.regex_split(tasks[index])
-    # selecting task number and task name
-
-    select = data[0].strip('\" \"')
-    selected_task = f'Selected task {select}: {data[3].strip(" ")}'
+    selected_index, selected_message = display_index(tasks,index)
 
     operation = logic.delete_task([index,tasks],filename)
 
     result_message = "Successfully deleted" if operation else "Failed to delete"
     message = f"{result_message} task {index+1} in {basename(filename)}"
 
-    tab = tabulate.tabulate([[f"{selected_task} \n{message}"]],tablefmt="fancy_grid")
-    print(tab)
+    print_result(selected_message,message)
     return
-
 
 
 @main.command(help="displays tasks from a selected todo_list")
@@ -188,15 +175,7 @@ def view_tasks(show,filename):
     filename = file_path(filename)
     tasks = logic.read_file(filename)
 
-    if tasks == "":
-        tab = tabulate.tabulate([[f"Todo list does not exist: {basename(filename)}"]],tablefmt="fancy_grid")
-        print(tab)
-        return
-
-
-    if len(tasks) < 1:
-        tab = tabulate.tabulate([["You have no available tasks."]],tablefmt="fancy_grid")
-        print(tab)
+    if not validate_tasks(tasks, filename):
         return
 
     try:
@@ -229,19 +208,7 @@ def change_status(index,status,filename):
     tasks = logic.read_file(filename)
     status = logic.get_dict_value(logic.STATUS,status.upper().strip())
 
-    if tasks == "":
-        tab = tabulate.tabulate([[f"Todo list does not exist: {basename(filename)}"]],tablefmt="fancy_grid")
-        print(tab)
-        return
-
-    if len(tasks) < 1:
-        tab = tabulate.tabulate([["You have no available tasks."]],tablefmt="fancy_grid")
-        print(tab)
-        return
-
-    if index > len(tasks):
-        tab = tabulate.tabulate([['The selected task number does not exists.']],tablefmt="fancy_grid")
-        print(tab)
+    if not validate_tasks(tasks,filename) or not valid_task_index(index,tasks):
         return
 
     if status == None:
@@ -251,11 +218,7 @@ def change_status(index,status,filename):
 
 
     index -=1
-    data = logic.regex_split(tasks[index])
-
-    # selecting task number and task name
-    select = data[0].strip('\" \"')
-    selected_task = f'Selected task {select}: {data[3].strip(" ")}'
+    selected_index, selected_message = display_index(tasks,index)
 
     operation = logic.change_status([index,tasks],status.upper(),filename)
 
@@ -269,9 +232,7 @@ def change_status(index,status,filename):
     result_message = "Failed to update status of task" if not operation else f'{state_message} task'
     message = f"{result_message} {index+1} in {basename(filename)}"
 
-    tab = tabulate.tabulate([[f"{selected_task} \n{message}"]],tablefmt="fancy_grid")
-    print(tab)
-
+    print_result(selected_message,message)
     return
 
 
@@ -290,7 +251,7 @@ def create_file(filename):
     if exists(file) and isfile(file):
         tab = tabulate.tabulate([[f"{basename(file)} already exists."]],tablefmt="fancy_grid")
         print("\n",end=tab)
-        choice = input(f"\nEnter yes to overwrite file: ").lower()
+        choice = input(f"\nOverwrite file (y/n): ").lower()
         if choice in ["yes","y"]:
             with open(file,"w") as f:
                 f.close()
@@ -428,6 +389,75 @@ def update_message(updated_data:list ):
 
     return message
 
+def validate_tasks(tasks: list, filename:str ):
+    """
+    validates the given list of tasks.
+
+    Args:
+        tasks (list): the list containing our task
+        filename (str): the name of teh file where we extracted the list from
+
+    Returns:
+        bool : default True
+    """
+    if tasks == "":
+        tab = tabulate.tabulate([[f"Todo list does not exist: {basename(filename)}"]],tablefmt="fancy_grid")
+        print(tab)
+        return False
+
+    if len(tasks) < 1:
+        tab = tabulate.tabulate([["You have no available tasks."]],tablefmt="fancy_grid")
+        print(tab)
+        return False
+
+    return True
+
+def valid_task_index(index: int, tasks: list):
+    """
+    validates the given index
+
+    Args:
+        index (int):the index we want to validate
+        tasks (list): a list containing our tasks
+
+    Returns:
+        bool : default True
+    """
+    if index == 0 or index > len(tasks):
+        tab = tabulate.tabulate([['The selected task number does not exists.']],tablefmt="fancy_grid")
+        print(tab)
+        return False
+
+    return True
+
+def display_index(tasks: list, index: int):
+    """
+    returns a string formatted version of the index and a message. The message
+    can be used for showcasing the index to the user
+
+    Args:
+        tasks (list): the list of tasks
+        index (_type_): the selected index
+
+    Returns:
+        tuple : selected_index, message
+    """
+    # selecting task number and task name
+    selected_index = tasks[index].split(" ")[0].strip('\" \"')
+    selection_message = f'Selected task {selected_index}: {tasks[index][3].strip(" ")}'
+    return selected_index, selection_message
+
+def print_result(selected_message: str ,message: str):
+    """
+    prints our the given message in a tabulated format
+
+    Args:
+        selected_message (str): selected message contains teh result of the operation
+        we performed. Example, update will have a selected_message of Successfully or Failed to
+        message (str): the result string
+    """
+    tab = tabulate.tabulate([[f"{selected_message} \n{message}"]],tablefmt="fancy_grid")
+    print(tab)
 
 if __name__ == "__main__":
 
